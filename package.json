@@ -1,0 +1,23 @@
+{
+  "name": "untis_scrapper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.3.0",
+    "node-telegram-bot-api": "^2.1.0",
+    "telegraf": "^4.16.3",
+    "webuntis": "^2.2.1"
+  },
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

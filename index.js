@@ -112,17 +112,55 @@ dotenv.config();
 
 import express from "express";
 const PORT = process.env.PORT || 3000;
+const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN;
 import bot from "./bot.js";
 
 const app = express();
 
 app.use(express.json());
 
+if (!WEBHOOK_TOKEN) {
+  throw new Error("Missing Telegram env vars");
+}
+
 app.get("/", (req, res) => res.send("jo"));
-app.post("/webhook", (req, res) => {
-  bot.handleUpdate(req.body);
-  res.sendStatus(200);
+app.post("/webhook", async (req, res) => {
+  if (req.get("X-Telegram-Bot-Api-Secret-Token") !== WEBHOOK_TOKEN) {
+    return res.sendStatus(401);
+  }
+  try {
+    const update = req.body;
+    if (!update.message) return;
+
+    const chatId = update.message.chat.id;
+    const text = update.message.text || "";
+
+    if (text === "/start") {
+      await sendMessage(chatId, "Darova! Dai svoi dannie");
+    } else if (text === "/help") {
+      await sendMessage(
+        chatId,
+        "Available commands:\n/start - Start the bot\n/help - Show help",
+      );
+    }
+  } catch (error) {
+    console.error("Update processing failed:" + error.message);
+  }
 });
+
+async function sendMessage(chatId, text) {
+  const response = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Telegram API returned ${response.status}`);
+  }
+}
 
 app.listen(PORT, () => {
   console.log(`App is running on ${PORT}`);

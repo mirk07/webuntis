@@ -55,20 +55,7 @@ dotenv.config();
 //   }
 // });
 
-// async function logInAcc(untis) {
-//   try {
-//     await untis.login();
-//     await bot.sendMessage(chatId, "Login succeed!");
 
-//     await fetchMyTimetable(untis, chatId);
-//     const intervalId = setInterval(() => fetchMyTimetable(untis), 30000);
-
-//     activeSessions.set(chatId, intervalId);
-//   } catch (e) {
-//     console.error(e);
-//     await bot.sendMessage(chatId, "Login failed :(((");
-//   }
-// }
 
 // async function fetchMyTimetable(untis, chatId) {
 //   try {
@@ -148,6 +135,20 @@ app.post("/webhook", async (req, res) => {
         chatId,
         "Available commands:\n/start - Start the bot\n/help - Show help",
       );
+    } else {
+      const loginData = text.split(",").map((i) => i.trim());
+      if (loginData.length < 4) {
+        await sendMessage(
+          chatId,
+          "You haven't entered your full login information",
+        );
+      } else {
+        const [school, username, password, schooldomain] = loginData;
+        await sendMessage(
+          chatId,
+          "Login information received. WebUntis authentication is not implemented yet.",
+        );
+      }
     }
   } catch (error) {
     console.error("Update processing failed:" + error.message);
@@ -165,6 +166,20 @@ async function sendMessage(chatId, text) {
   );
   if (!response.ok) {
     throw new Error(`Telegram API returned ${response.status}`);
+  }
+}
+
+async function logInAcc(untis) {  
+  try {
+    await untis.login();
+    await sendMessage(chatId, "Login succeed!");
+
+    await fetchMyTimetable(untis, chatId);
+
+    return {success: true, untis, chatId}
+  } catch (e) {
+    console.error(e);
+    await sendMessage(chatId, "Login failed :(((");
   }
 }
 

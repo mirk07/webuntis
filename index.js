@@ -112,6 +112,7 @@ dotenv.config();
 
 import express from "express";
 const PORT = process.env.PORT || 3000;
+const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN;
 import bot from "./bot.js";
 

@@ -127,11 +127,16 @@ if (!WEBHOOK_TOKEN) {
 app.get("/", (req, res) => res.send("jo"));
 app.post("/webhook", async (req, res) => {
   if (req.get("X-Telegram-Bot-Api-Secret-Token") !== WEBHOOK_TOKEN) {
+    console.log("No webhook token");
     return res.sendStatus(401);
   }
+
+  res.sendStatus(200);
+
   try {
     const update = req.body;
     if (!update.message) return;
+    console.log(update);
 
     const chatId = update.message.chat.id;
     const text = update.message.text || "";

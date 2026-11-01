@@ -55,8 +55,6 @@ dotenv.config();
 //   }
 // });
 
-
-
 // async function fetchMyTimetable(untis, chatId) {
 //   try {
 //     const day = new Date();
@@ -102,6 +100,7 @@ const PORT = process.env.PORT || 3000;
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const WEBHOOK_TOKEN = process.env.WEBHOOK_TOKEN;
 import bot from "./bot.js";
+import { WebUntis } from "webuntis";
 
 const app = express();
 
@@ -169,17 +168,73 @@ async function sendMessage(chatId, text) {
   }
 }
 
-async function logInAcc(untis) {  
+async function logInUser(chatId, school, username, password, schooldomain) {
   try {
+    const untis = new WebUntis(school, username, password, schooldomain);
     await untis.login();
     await sendMessage(chatId, "Login succeed!");
 
-    await fetchMyTimetable(untis, chatId);
+    await sendMessage(chatId, "WebUntis connected successfully!");
 
-    return {success: true, untis, chatId}
+    return { success: true, untis, chatId };
   } catch (e) {
     console.error(e);
     await sendMessage(chatId, "Login failed :(((");
+  }
+}
+
+async function chechUserTimetable(chatId) {
+  const user = users.get(chatId);
+  if (!user) return;
+  await fetchMyTimetable(user.untis, chatId, user.notifiedLessons);
+}
+
+async function fetchMyTimetable(untis, chatId, notifiedLessons) {
+  try {
+    const day = new Date();
+    if (day.getDay() === 6) day.setDate(day.getDate() + 2);
+    else if (day.getDay() === 0) day.setDate(day.getDate() + 1);
+
+    const timetable = await untis.getOwnTimetableForWeek(day);
+    if (!timetable || timetable.length === 0) return;
+
+    for (const lesson of timetable) {
+      if (
+        lesson.cellState !== "CANCEL" &&
+        lesson.cellState !== "SUBSTITUTION"
+      ) {
+        continue;
+      } else {
+        // const subject =
+        //   lesson.su && lesson.su[0] ? lesson.su[0].longname : "Unknown subject";
+        const lessonID = `${lesson.date}-${lesson.startTime}-${lesson.endTime}`;
+        if (notifiedLessons.has(lessonID)) continue;
+        // if (!canceledLessons.has(lessonID)) {
+        //   canceledLessons.add(lessonID);
+        //   console.log("NEW ENTFALL", lesson);
+
+        //   await bot.sendMessage(
+        //     chatId,
+        //     `OMG THERE IS A NEW ENTFALL
+        //      \n${lesson.studentGroup ? lesson.studentGroup : lesson.lessonText}
+        //      \nDate:${lesson.date}`,
+        //   );
+        // }
+        const lessonName =
+          lesson.studentGroup || lesson.lessonText || "Unknown lesson";
+        await sendMessage(
+          chatId,
+          `There is a new Entfall bratan\n` +
+            `Lesson: ${lessonName}\n` +
+            `Date: ${lesson.date}\n` +
+            `Status: ${lesson.cellState === "CANCEL" ? "Cancelled" : "Substitution"}`,
+        );
+
+        notifiedLessons.add(lessonID);
+      }
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 
